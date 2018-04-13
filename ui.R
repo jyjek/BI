@@ -64,7 +64,20 @@ dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                                       column(6, DT::dataTableOutput("row"))
                                     )),
                                tabItem("ct",
-                                       uiOutput("cat"))
+                                       uiOutput("cat"),
+                                       uiOutput("ab1"),br(),
+                                       conditionalPanel(
+                                         condition="($('html').hasClass('shiny-busy'))",
+                                         p("It's took like 15 sec..."),
+                                         img(src="ajax-loader-bar.gif")),
+                                     fluidRow(
+                                       column(8, DT::dataTableOutput("category"),
+                                              column(4, valueBoxOutput("proc")))),
+                                       fluidRow( column(5,plotlyOutput("plotly")),
+                                               column(7,highchartOutput("tree")))
+                                       
+                                       
+                                       )
                          
                )            
                ))

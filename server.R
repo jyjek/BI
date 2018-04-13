@@ -15,6 +15,8 @@ library(stringr)
 library(DBI)
 library(glue)
 library(ISOweek)
+library(viridis) 
+library(plotly)
 project <- "rozetka-com-ua"
 shinyServer <- shinyServer(function(input, output, session) {
   runjs({'var el2 = document.querySelector(".skin-blue");
@@ -30,7 +32,7 @@ shinyServer <- shinyServer(function(input, output, session) {
     title.style.visibility = "hidden";
     } '}))
   
-  output$sidebarUserPanel <- renderUI({
+  output$sidebarUserPanel <-  renderUI({
     
       sidebarUserPanel(# input$userName,
         "admin",
@@ -47,7 +49,6 @@ shinyServer <- shinyServer(function(input, output, session) {
   })
   
  output$sk= renderUI({
-
     numericInput("SKU","Input SKU:",value = "")
   })
  
@@ -56,6 +57,13 @@ shinyServer <- shinyServer(function(input, output, session) {
        need(input$SKU!="", 'Choose SKU')
      )
    actionButton("ok","Start processing",class='btn-info')
+ })
+ 
+ output$ab1= renderUI({
+   validate(
+     need(input$cat!="", 'Choose category')
+   )
+   actionButton("ok1","Start processing",class='btn-info')
  })
  
   observeEvent(input$ok,{
@@ -75,11 +83,11 @@ shinyServer <- shinyServer(function(input, output, session) {
                  on a.id = b.id
                  
                  left join 
-                 (SELECT product_id, date(created) as data ,count(product_quantity) as sum_30
-                 FROM [rozetka-com-ua:CommonViews.orders_products] 
-                 where  created> DATE_ADD(CURRENT_DATE(), -28, 'DAY') 
-                 and order_status = 'complete' and product_status ='staffed'  
-                 group by 1,2) c
+                 (SELECT   merchandises.product.id as product_id	, date(created) as data ,count( merchandises.quantity ) as sum_30
+                    FROM [rozetka-com-ua:rozetka_orders.orders]
+                    where  created> DATE_ADD(CURRENT_DATE(), -28, 'DAY') 
+                    and  status = 'complete' and merchandises.status ='staffed'
+                    group by 1,2) c
                  on b.id=c.product_id and c.data=a.data                     
                  group by 1,2,3,4
                  order by a.data",input$SKU)
@@ -207,7 +215,77 @@ shinyServer <- shinyServer(function(input, output, session) {
       color = ifelse(41>40 ,"red","blue")
     )
   })
-
+# Category ####
+  
+  observeEvent(input$ok1,{
+    val$num1<-1
+    if( val$num1!=0){
+                sql1<-sprintf("select a.*,b.parent_id,b.producer_title,b.title
+          from
+          (SELECT   merchandises.product.id,merchandises.quantity,merchandises.cost_with_discount,merchandises.coupon.title,
+                  date(created) as date 
+          FROM flatten([rozetka-com-ua:rozetka_orders.orders] ,merchandises)
+              where  created> DATE_ADD(CURRENT_DATE(), -28, 'DAY') 
+                    and  status = 'complete' and merchandises.status ='staffed' ) a 
+           join(
+           SELECT id,title,parent_id,producer_title FROM [rozetka-com-ua:rozetka_products.products] 
+           where parent_id=%s
+           ) b on a.merchandises.product.id=b.id",input$cat)
+      
+      q<-query_exec(sql1, project = project,max_pages = Inf)
+      val$cat<-q
+    }
+    val$num1<-0
+  })
+  
+  output$category<-renderDataTable({
+    validate(
+      need(val$cat, '')
+    )
+    datatable(  val$cat,escape=F,rownames=F,
+                options=list(scrollX = TRUE,columnDefs = list(list(className = 'dt-center', targets = "_all"))),selection="none"
+    )
+    
+  })
+  
+  output$plotly<-renderPlotly({
+    plot_ly(val$cat%>%
+              magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
+              mutate(date=ymd(date))%>%
+              group_by(title_p)%>%
+              summarise(sums=sum(cost),
+                        qnt=sum(qnt)), labels = ~title_p, values = ~sums, type = 'pie') %>%
+      layout(title = 'Доля бренду у категорії',
+             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+    
+  })
+  output$tree<-renderHighchart({
+    hchart( val$cat%>%
+              magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
+              mutate(date=ymd(date))%>%
+              group_by(title_p)%>%
+              summarise(sums=sum(cost),
+                        qnt=sum(qnt)), "treemap", hcaes(x = title_p, value = sums/10**3, color = qnt))%>%
+      hc_tooltip(pointFormat = "<b>{point.title_p}</b>:<br>
+                Об'єм продажів: {point.value:,.0f} тис.грн<br>
+                Оборотність: {point.qnt:,.0f} шт.")%>%
+      hc_title(text = "Структура продажів")%>% 
+      hc_colorAxis(stops = list_parse2(data.frame(q = 0:10/10,
+                                                  c = substring(viridis(10 + 1), 0, 7),
+                                                  stringsAsFactors = FALSE)))
+    
+  })
+  
+  output$proc <- renderValueBox({
+    validate(need(val$cat, ''))
+  
+    valueBox(
+      glue('{dat%>%arrange(date)%>%tail(7)%>%
+        summarise(sum(views))%>%as.numeric()} ({round(dat%>%arrange(desc(date))%>%slice(1:7)%>%summarise(sum(views))/dat%>%arrange(desc(date))%>%slice(8:14)%>%summarise(sum(views))*100-100,1)}%)'),"Weekly views", icon = icon("eye"),
+      color = ifelse(41>40 ,"red","blue")
+    )
+  })
   
   
   })
