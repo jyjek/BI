@@ -42,7 +42,7 @@ shinyServer <- shinyServer(function(input, output, session) {
   val<-reactiveValues()
   val$num<-1
 
-  output$cat= renderUI({
+  output$cat= renderUI({ 
     numericInput("cat","Input category:",value = "")
   })
   
