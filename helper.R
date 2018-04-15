@@ -1,13 +1,21 @@
 
 dat=q
 
-q%>%
+r=q%>%
   magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
   mutate(date=ymd(date),
          mt=if_else(!is.na(coup),1,0))%>%
   group_by(mt)%>%
   summarise(sums=sum(cost),
-            qnt=sum(qnt))%>%.[which(.$mt==1),"sums"]/sum(.$sums)
+            qnt=sum(qnt))%>%.$sums
+r[2]/r[1]*100
+
+r=dat%>%
+  magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
+  mutate(date=ymd(date))%>%
+  group_by(title_p)%>%
+  summarise(sm=sum(cost),
+            mn=sum(cost)/sum(qnt))
 
 
 library(plotly)

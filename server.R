@@ -53,9 +53,7 @@ shinyServer <- shinyServer(function(input, output, session) {
   })
  
  output$ab= renderUI({
-     validate(
-       need(input$SKU!="", 'Choose SKU')
-     )
+     validate(need(input$SKU!="", 'Choose SKU'))
    actionButton("ok","Start processing",class='btn-info')
  })
  
@@ -139,7 +137,6 @@ shinyServer <- shinyServer(function(input, output, session) {
       hc_title(text = dat$title[1])%>%
       hc_add_theme(hc_theme_smpl())
     }else{
-      
       n1<-ISOweekday(as.Date(max(dat$date)))
       if(n1==7){dat$week <- as.numeric( format(dat$date-1, "%U"))}else{dat$week <- as.numeric( format(dat$date-(n1+1), "%U"))}
       
@@ -147,7 +144,6 @@ shinyServer <- shinyServer(function(input, output, session) {
         group_by(week)%>%
         summarise(sls=sum(sales),
                   vws=sum(views))
-      
       highchart() %>% 
         hc_add_series(dat1,"column",hcaes(x=week,y=vws),name="Views",yAxis = 0)%>%
         hc_add_series(dat1,"column",hcaes(x=week,y=sls),name="Sales",yAxis = 1)%>%
@@ -220,7 +216,7 @@ shinyServer <- shinyServer(function(input, output, session) {
   observeEvent(input$ok1,{
     val$num1<-1
     if( val$num1!=0){
-                sql1<-sprintf("select a.*,b.parent_id,b.producer_title,b.title
+      sql1<-sprintf("select a.*,b.parent_id,b.producer_title,b.title
           from
           (SELECT   merchandises.product.id,merchandises.quantity,merchandises.cost_with_discount,merchandises.coupon.title,
                   date(created) as date 
@@ -239,9 +235,7 @@ shinyServer <- shinyServer(function(input, output, session) {
   })
   
   output$category<-renderDataTable({
-    validate(
-      need(val$cat, '')
-    )
+    validate(need(val$cat, ''))
     datatable(  val$cat,escape=F,rownames=F,
                 options=list(scrollX = TRUE,columnDefs = list(list(className = 'dt-center', targets = "_all"))),selection="none"
     )
@@ -249,18 +243,22 @@ shinyServer <- shinyServer(function(input, output, session) {
   })
   
   output$plotly<-renderPlotly({
-    plot_ly(val$cat%>%
+    validate(need(val$cat!="", ''))
+  val$cat%>%
               magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
               mutate(date=ymd(date))%>%
               group_by(title_p)%>%
               summarise(sums=sum(cost),
-                        qnt=sum(qnt)), labels = ~title_p, values = ~sums, type = 'pie') %>%
+                        qnt=sum(qnt))%>%
+    plot_ly(labels = ~title_p, values = ~sums)%>%
+              add_pie(hole = 0.6) %>%
       layout(title = 'Доля бренду у категорії',
              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
     
   })
   output$tree<-renderHighchart({
+    validate(need(val$cat!="", ''))
     hchart( val$cat%>%
               magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
               mutate(date=ymd(date))%>%
@@ -279,10 +277,15 @@ shinyServer <- shinyServer(function(input, output, session) {
   
   output$proc <- renderValueBox({
     validate(need(val$cat, ''))
-  
-    valueBox(
-      glue('{dat%>%arrange(date)%>%tail(7)%>%
-        summarise(sum(views))%>%as.numeric()} ({round(dat%>%arrange(desc(date))%>%slice(1:7)%>%summarise(sum(views))/dat%>%arrange(desc(date))%>%slice(8:14)%>%summarise(sum(views))*100-100,1)}%)'),"Weekly views", icon = icon("eye"),
+    r<-val$cat%>%
+      magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
+      mutate(date=ymd(date),
+             mt=if_else(!is.na(coup),1,0))%>%
+      group_by(mt)%>%
+      summarise(sums=sum(cost),
+                qnt=sum(qnt))%>%.$sums
+    
+    valueBox( round(r[2]/r[1]*100,1),"Відсоток акційних продажів", icon = icon("eye"),
       color = ifelse(41>40 ,"red","blue")
     )
   })

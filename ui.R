@@ -8,16 +8,13 @@ library(lubridate)
 library(shinyWidgets)
 library(glue)
 library(highcharter)
-library(shinycustomloader)
-library(shinycssloaders)
-library(shinymaterial)
-library(shinybulma)
+library(plotly)
 
 options(shiny.sanitize.errors = FALSE)
 dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                
                dashboardHeader(
-                 title="Rozetka"
+                 title="Rztk"
                 # tags$li(class = "dropdown", actionLink("sad",class = "my_class", "Log Out",icon("power-off")))
                  #dropdownMenuOutput("messageMenu")
                  ),
@@ -70,11 +67,20 @@ dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                                          condition="($('html').hasClass('shiny-busy'))",
                                          p("It's took like 15 sec..."),
                                          img(src="ajax-loader-bar.gif")),
-                                     fluidRow(
-                                       column(8, DT::dataTableOutput("category"),
-                                              column(4, valueBoxOutput("proc")))),
-                                       fluidRow( column(5,plotlyOutput("plotly")),
-                                               column(7,highchartOutput("tree")))
+                                     
+                                       tabsetPanel(id="tab1",
+                                                 
+                                                   tabPanel("Graph",br(),
+                                                            fluidRow(valueBoxOutput("proc",width = 3)),
+                                                            fluidRow( column(5,plotlyOutput("plotly")),
+                                                                      column(7,highchartOutput("tree")))),
+                                                   tabPanel("Table",
+                                                            DT::dataTableOutput("category")
+                                                            ))
+                                       
+                                    
+                                          
+                                      
                                        
                                        
                                        )
