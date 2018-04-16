@@ -17,6 +17,7 @@ library(glue)
 library(ISOweek)
 library(viridis) 
 library(plotly)
+library(sunburstR)
 project <- "rozetka-com-ua"
 shinyServer <- shinyServer(function(input, output, session) {
   runjs({'var el2 = document.querySelector(".skin-blue");
@@ -234,16 +235,21 @@ shinyServer <- shinyServer(function(input, output, session) {
     val$num1<-0
   })
   
-  output$category<-renderDataTable({
-    validate(need(val$cat, ''))
-    datatable(  val$cat,escape=F,rownames=F,
-                options=list(scrollX = TRUE,columnDefs = list(list(className = 'dt-center', targets = "_all"))),selection="none"
-    )
+  output$category<- DT::renderDataTable({
+    val$cat 
+  },
+    server=FALSE,
+   # validate(need(!is.null(val$cat), ''))
+   escape=F,rownames=F,class = 'cell-border compact',
+                colnames = c("SKU","Кількість","Вартість","Промо-код","Дата","Category ID","Виробник","Назва"),
+                extensions = c('Scroller','Buttons'),
+                options=list( dom = 'Bfrtip',buttons = c('csv', 'excel'),scrollX = TRUE,columnDefs = list(list(className = 'dt-center', targets = "_all"))),selection="none"
     
-  })
+    
+  )
   
   output$plotly<-renderPlotly({
-    validate(need(val$cat!="", ''))
+    validate(need(!is.null(val$cat), ''))
   val$cat%>%
               magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
               mutate(date=ymd(date))%>%
@@ -258,7 +264,7 @@ shinyServer <- shinyServer(function(input, output, session) {
     
   })
   output$tree<-renderHighchart({
-    validate(need(val$cat!="", ''))
+    validate(need(!is.null(val$cat), ''))
     hchart( val$cat%>%
               magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
               mutate(date=ymd(date))%>%
@@ -276,7 +282,7 @@ shinyServer <- shinyServer(function(input, output, session) {
   })
   
   output$proc <- renderValueBox({
-    validate(need(val$cat, ''))
+    validate(need(!is.null(val$cat), ''))
     r<-val$cat%>%
       magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
       mutate(date=ymd(date),
@@ -285,9 +291,24 @@ shinyServer <- shinyServer(function(input, output, session) {
       summarise(sums=sum(cost),
                 qnt=sum(qnt))%>%.$sums
     
-    valueBox( round(r[2]/r[1]*100,1),"Відсоток акційних продажів", icon = icon("eye"),
+    valueBox( if(length(r)>1) {round(r[2]/r[1]*100,1)}else{0}  ,"Відсоток акційних продажів", icon = icon("percent"),
       color = ifelse(41>40 ,"red","blue")
     )
+  })
+  
+  output$subs<-renderSunburst({
+    validate(need(!is.null(val$cat), ''))
+    val$cat%>%
+      magrittr::set_colnames(c("id","qnt","cost","coup","date","parent","title_p","title"))%>%
+      mutate(date=ymd(date))%>%
+      group_by(title,title_p)%>%
+      summarise(cost=sum(cost))%>%
+      select(title_p,title,cost)%>%ungroup()%>%
+      mutate(title=gsub("-"," ",title),
+             nm=glue('{title_p}-{title}'))%>%
+      select(nm,cost)%>%
+      sunburst(width="100%",height = "100%", legend = FALSE)
+    
   })
   
   

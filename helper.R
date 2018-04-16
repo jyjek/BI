@@ -36,3 +36,14 @@ library(viridis)
                                                c = substring(viridis(10 + 1), 0, 7),
                                                stringsAsFactors = FALSE)))
  
+ 
+ 
+ dat1%>%
+   group_by(title,title_p)%>%
+   summarise(cost=sum(cost))%>%
+   select(title_p,title,cost)%>%ungroup()%>%
+   mutate(title=gsub("-"," ",title),
+          nm=glue('{title_p}-{title}'))%>%
+   select(nm,cost)%>%
+   sunburst()
+ 

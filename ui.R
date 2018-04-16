@@ -9,6 +9,7 @@ library(shinyWidgets)
 library(glue)
 library(highcharter)
 library(plotly)
+library(sunburstR)
 
 options(shiny.sanitize.errors = FALSE)
 dashboardPage( skin="blue",#style = 'overflow-x: scroll',
@@ -72,16 +73,13 @@ dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                                                  
                                                    tabPanel("Graph",br(),
                                                             fluidRow(valueBoxOutput("proc",width = 3)),
-                                                            fluidRow( column(5,plotlyOutput("plotly")),
-                                                                      column(7,highchartOutput("tree")))),
+                                                            fluidRow( 
+                                                              #column(5,plotlyOutput("plotly")),
+                                                              column(6,sunburstOutput("subs")),
+                                                              column(6,highchartOutput("tree")))),
                                                    tabPanel("Table",
                                                             DT::dataTableOutput("category")
                                                             ))
-                                       
-                                    
-                                          
-                                      
-                                       
                                        
                                        )
                          
