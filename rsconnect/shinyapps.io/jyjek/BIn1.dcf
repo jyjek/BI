@@ -1,0 +1,13 @@
+name: BIn1
+title: BIn1
+username:
+account: jyjek
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 323612
+bundleId: 1320481
+url: https://jyjek.shinyapps.io/BIn1/
+when: 1523866016.67282
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app.R

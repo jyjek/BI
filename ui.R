@@ -24,7 +24,7 @@ dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                  uiOutput("sidebarUserPanel"),
                  sidebarMenu(
                    menuItem('Time Line', icon=icon("line-chart"), tabName = "tm" ),
-                   menuItem('Categories',tabName = "ct")
+                   menuItem('Categories',icon=icon("list"),tabName = "ct")
                   
                   
                  )),
@@ -41,7 +41,6 @@ dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                                       
                                       conditionalPanel(
                                         condition="($('html').hasClass('shiny-busy'))",
-                                        p("It's took like 15 sec..."),
                                         img(src="ajax-loader-bar.gif")
                                         
                                       ),
@@ -66,13 +65,15 @@ dashboardPage( skin="blue",#style = 'overflow-x: scroll',
                                        uiOutput("ab1"),br(),
                                        conditionalPanel(
                                          condition="($('html').hasClass('shiny-busy'))",
-                                         p("It's took like 15 sec..."),
                                          img(src="ajax-loader-bar.gif")),
                                      
                                        tabsetPanel(id="tab1",
                                                  
                                                    tabPanel("Graph",br(),
-                                                            fluidRow(valueBoxOutput("proc",width = 3)),
+                                                            fluidRow(valueBoxOutput("proc",width = 3),
+                                                                     valueBoxOutput("sum_sales",width = 3),
+                                                                     valueBoxOutput("items",width = 3),
+                                                                     valueBoxOutput("mnch",width = 3)),
                                                             fluidRow( 
                                                               #column(5,plotlyOutput("plotly")),
                                                               column(6,sunburstOutput("subs")),

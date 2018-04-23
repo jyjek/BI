@@ -2,3 +2,11 @@
   background-color: #C2FDD4!important;
   color: black!important;
 }
+
+.fa-angle-double-down {
+  color:red
+}
+
+.fa-angle-double-up {
+  color:green
+}

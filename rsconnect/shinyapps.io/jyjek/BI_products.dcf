@@ -1,0 +1,13 @@
+name: BI_products
+title: BI_products
+username:
+account: jyjek
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 323675
+bundleId: 1320937
+url: https://jyjek.shinyapps.io/BI_products/
+when: 1523881505.68187
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|app.R|giphy.gif|helper.R|Thumbs.db|www/giphy.gif|www/Thumbs.db
